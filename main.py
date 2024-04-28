@@ -1,4 +1,5 @@
 import math
+import random
 import time
 
 from nn import NeuralNetwork as nn
@@ -10,28 +11,46 @@ screen = pygame.display.set_mode((width, length))
 clock = pygame.time.Clock()
 running = True
 dt = clock.tick(60) / 1000
-
+trainMode = True
 carImage = pygame.image.load('car.png').convert()
-
-track = [[(119, 55), (322, 44), (516, 41), (835, 45), (1021, 68), (1127, 113), (1185, 175), (1213, 316), (1167, 579),
-          (1061, 706), (886, 741), (660, 735), (327, 731), (101, 727), (11, 513), (19, 387), (57, 108), (119, 55)],
-         [(227, 249), (233, 477), (355, 564), (535, 605), (701, 598), (932, 585), (1041, 477), (1052, 285), (947, 182),
-          (705, 155), (527, 146), (361, 148), (284, 165), (227, 249)], (706, 675),
-         [[(732, 590), (728, 756)], [(759, 592), (749, 749)], [(791, 593), (775, 744)], [(815, 593), (802, 747)],
-          [(838, 591), (834, 743)], [(863, 590), (876, 743)], [(893, 585), (916, 737)], [(921, 585), (957, 733)],
-          [(939, 579), (1041, 715)], [(957, 565), (1084, 685)], [(976, 533), (1123, 641)], [(1011, 503), (1166, 591)],
-          [(1033, 466), (1186, 514)], [(1043, 421), (1197, 461)], [(1038, 385), (1209, 400)],
-          [(1042, 339), (1214, 353)], [(1036, 300), (1213, 299)], [(1024, 271), (1198, 204)], [(995, 237), (1142, 117)],
-          [(969, 213), (1090, 85)], [(947, 194), (979, 63)], [(927, 187), (925, 58)], [(894, 181), (887, 46)],
-          [(819, 172), (831, 41)], [(788, 162), (791, 39)], [(757, 167), (754, 41)], [(706, 155), (697, 39)],
-          [(657, 155), (639, 38)], [(614, 155), (595, 40)], [(563, 137), (552, 34)], [(531, 145), (514, 45)],
-          [(502, 155), (471, 27)], [(455, 150), (422, 33)], [(409, 153), (385, 44)], [(367, 152), (341, 41)],
-          [(325, 161), (307, 49)], [(286, 169), (221, 58)], [(269, 205), (94, 89)], [(237, 233), (71, 161)],
-          [(227, 260), (61, 203)], [(233, 295), (53, 253)], [(239, 356), (48, 309)], [(242, 387), (30, 367)],
-          [(241, 441), (14, 426)], [(245, 477), (8, 503)], [(278, 502), (34, 548)], [(311, 529), (74, 623)],
-          [(332, 550), (89, 693)], [(361, 564), (173, 715)], [(397, 577), (257, 727)], [(403, 578), (327, 728)],
-          [(427, 581), (397, 716)], [(461, 593), (460, 734)], [(499, 593), (503, 729)], [(555, 603), (567, 729)],
-          [(627, 606), (634, 726)], [(675, 599), (683, 734)]]]
+savedNN = [[6, 2, 5], [
+    [-0.5631923790655183, 0.49841881290942175, 0.3465879773517755, -0.7998544662924352, -0.7634656680723565,
+     -0.3329824442765934, 0.06965184167619747, 0.6615534093398112, -0.9207512985399936, 0.17195420942525624,
+     -0.27753755545795084, 0.1654132749135642],
+    [0.11100084913629474, -0.35000021188590874, -0.4665983482487088, -0.31395056736985283, 0.3223841505483032,
+     0.4330940765418644, 0.1830718409702164, 0.7205411527589529, -0.9793688139628357, 0.21412091574162145]],
+           [[-0.9363793491549001, -0.7692096667117796],
+            [0.21072800178032325, -0.7209291988404987, -0.17757812180455015, 0.27404678192793813, -0.8020575054631593]]]
+print(savedNN[1])
+track = [[(852, 728), (881, 705), (905, 675), (928, 603), (931, 589), (932, 547), (897, 450), (857, 414), (765, 371),
+          (632, 353), (473, 359), (345, 366), (280, 355), (221, 337), (226, 310), (236, 305), (325, 303), (439, 314),
+          (579, 301), (729, 281), (825, 249), (889, 175), (863, 122), (687, 47), (468, 45), (262, 47), (98, 65),
+          (54, 111), (59, 285), (51, 606), (55, 704), (335, 737), (852, 728)],
+         [(288, 641), (549, 649), (620, 639), (701, 635), (734, 617), (771, 597), (763, 567), (760, 530), (741, 510),
+          (647, 475), (523, 445), (419, 446), (259, 445), (159, 421), (156, 393), (149, 341), (173, 269), (222, 231),
+          (353, 219), (610, 207), (722, 199), (763, 189), (765, 162), (723, 125), (643, 112), (468, 120), (221, 122),
+          (107, 156), (131, 320), (139, 521), (177, 589), (211, 607), (288, 641)], (605, 686),
+         [[(699, 597), (734, 745)], [(737, 594), (787, 743)], [(757, 592), (899, 696)], [(751, 571), (980, 567)],
+          [(754, 533), (948, 517)], [(737, 520), (925, 473)], [(702, 513), (900, 439)], [(694, 501), (863, 407)],
+          [(653, 489), (806, 382)], [(623, 476), (749, 350)], [(582, 467), (682, 345)], [(551, 465), (625, 336)],
+          [(514, 461), (549, 347)], [(481, 454), (503, 355)], [(452, 457), (476, 356)], [(435, 448), (454, 353)],
+          [(395, 459), (415, 351)], [(347, 447), (370, 355)], [(309, 451), (329, 362)], [(285, 441), (305, 361)],
+          [(231, 441), (280, 339)], [(201, 432), (255, 340)], [(167, 427), (239, 335)], [(158, 393), (229, 333)],
+          [(151, 364), (225, 322)], [(148, 326), (230, 313)], [(161, 294), (230, 311)], [(179, 267), (234, 306)],
+          [(200, 248), (251, 305)], [(232, 234), (263, 304)], [(257, 229), (279, 308)], [(286, 225), (289, 302)],
+          [(317, 224), (309, 299)], [(353, 222), (358, 309)], [(401, 219), (415, 315)], [(459, 214), (477, 304)],
+          [(500, 215), (513, 302)], [(555, 213), (569, 301)], [(597, 216), (618, 287)], [(645, 209), (663, 280)],
+          [(693, 219), (713, 285)], [(732, 197), (751, 271)], [(751, 199), (783, 260)], [(766, 178), (838, 235)],
+          [(763, 163), (871, 200)], [(761, 158), (883, 165)], [(747, 147), (856, 121)], [(737, 136), (775, 89)],
+          [(713, 124), (725, 75)], [(684, 113), (673, 52)], [(638, 109), (621, 52)], [(580, 112), (573, 51)],
+          [(528, 117), (526, 48)], [(478, 119), (477, 52)], [(412, 115), (413, 47)], [(338, 116), (340, 57)],
+          [(301, 117), (291, 57)], [(257, 118), (247, 60)], [(213, 123), (199, 65)], [(175, 135), (154, 65)],
+          [(139, 143), (101, 67)], [(117, 153), (75, 95)], [(94, 146), (59, 113)], [(88, 171), (57, 170)],
+          [(117, 213), (63, 220)], [(117, 250), (65, 263)], [(120, 291), (68, 304)], [(124, 350), (69, 354)],
+          [(123, 385), (66, 389)], [(135, 437), (67, 435)], [(135, 475), (67, 472)], [(135, 508), (91, 511)],
+          [(146, 533), (91, 573)], [(169, 573), (107, 657)], [(202, 601), (167, 695)], [(262, 628), (224, 709)],
+          [(316, 641), (293, 719)], [(365, 638), (359, 723)], [(436, 653), (434, 720)], [(486, 649), (489, 723)],
+          [(564, 653), (563, 726)], [(586, 646), (590, 723)]]]
 
 
 def sign(x):
@@ -87,6 +106,9 @@ def DrawTrack(track, drawCP):
         DrawCheckPoints(track[3])
 
 
+layers = [len([-90, -37.5, 0, 37.5, 90]) + 1, 2, 5]
+
+
 class Agent:
     maxSpeed = 6
     driftLength = 4
@@ -101,16 +123,20 @@ class Agent:
     handBrakeSlip = normalSlip * 3
     errorCorrectionStrength = 15
     gen = 0
-    genLength = 5
+    genLength = 15
     startTime = time.time()
     boxSize = 2.5
 
-    numBestAgents = 2
-    mutateFactor = .5
-    mutationChance = .25
+    numBestAgents = 3
+    mutateFactor = 0.01
+    mutationChance = .01
     allAgents = []
     allMaxCP = 0
     nnBest = 0
+
+    bestFitness = 0
+
+    startAngle = 0
 
     def __init__(self):
         self.image = pygame.image.load('car.png').convert_alpha()
@@ -119,8 +145,9 @@ class Agent:
         self.acc = 3
         self.turnSpeed = 2.8
         self.slip = Agent.normalSlip
-        self.dir = 0
-        self.angle = 0
+        sa = random.uniform(-Agent.startAngle, Agent.startAngle)
+        self.dir = sa
+        self.angle = sa
         self.vel = pygame.Vector2(0, 0)
         self.pos = pygame.Vector2(track[2][0], track[2][1])
         self.speed = 0
@@ -132,13 +159,16 @@ class Agent:
                            (self.pos.x - self.size * Agent.boxSize, self.pos.y + self.size * Agent.boxSize)]
         self.angles = [-90, -37.5, 0, 37.5, 90]
         self.vision = []
-        self.totalCP = 0
+        self.fitness = 0
         self.nextCP = 0
         self.runAgent = True
-
-        layers = [len(self.angles) + 1, 3, 5]
-        self.nn = nn(layers)
-        self.nn.randomize()
+        randomTrade = False
+        if randomTrade:
+            self.nn = nn(layers)
+            self.nn.randomize()
+        else:
+            self.nn = copyNN(savedNN)
+            self.nn.mutate(Agent.mutationChance, Agent.mutateFactor)
         Agent.allAgents.append(self)
 
     def Vision(self):
@@ -162,7 +192,10 @@ class Agent:
 
                         if wallDist == min(wallDists):
                             endPos = pygame.Vector2(intersection[1][0], intersection[1][1])
-            dists.append(min(wallDists))
+            if wallDists:
+                dists.append(min(wallDists))
+            else:
+                dists.append(0)
             endPositions.append(endPos)
         return [dists, endPositions]
 
@@ -222,29 +255,35 @@ class Agent:
         self.pos.y += self.vel.y
 
     def ResetAgent(self):
-        self.angle = 0
-        self.dir = 0
+        sa = random.uniform(-Agent.startAngle, Agent.startAngle)
+        self.dir = sa
+        self.angle = sa
         self.speed = 0
-        self.totalCP = 0
+        self.fitness = 0
         self.nextCP = 0
         self.runAgent = True
         self.pos = pygame.Vector2(track[2][0], track[2][1])
 
     def AgentDeath(self):
-        self.runAgent = False
+        if trainMode:
+            self.runAgent = False
+        else:
+            self.ResetAgent()
 
     def TrackCollisions(self):
         for walls in range(2):
             for wall in range(len(track[walls]) - 1):
+
                 coll = BoxCollision(self.carCorners, (track[walls][wall], track[walls][wall + 1]))
                 if coll:
+                    self.fitness -= 1
                     self.AgentDeath()
 
     def TrackCheckpoints(self):
         coll = BoxCollision(self.carCorners, track[3][self.nextCP])
         pygame.draw.line(screen, "green", track[3][self.nextCP][0], track[3][self.nextCP][1], 1)
         if coll:
-            self.totalCP += 1
+            self.fitness += 1
             if self.nextCP == len(track[3]) - 1:
                 self.nextCP = 0
             else:
@@ -276,6 +315,7 @@ class Agent:
         if abs(self.speed) > Agent.driftSpeed:
             self.speed += Agent.driftFriction * dt * (abs(angleError) / 180) * -sign(self.speed)
         self.speed += Agent.friction * -sign(self.speed) * dt
+
         if outputs[4]:
             self.slip = Agent.handBrakeSlip
             if self.speed < 0:
@@ -315,44 +355,46 @@ class Agent:
         else:
             self.dir += sign(angleError) * (Agent.driftLength * .25)
         b = 4 * Agent.maxTurnSpeed / Agent.maxSpeed ** 2
-        self.turnSpeed = -b * (Agent.baseTSValue + abs(self.speed)) * (
-                Agent.baseTSValue - Agent.maxSpeed + abs(self.speed)) + Agent.ShiftUpTS
+        # self.turnSpeed = -b * (Agent.baseTSValue + abs(self.speed)) * (
+        #         Agent.baseTSValue - Agent.maxSpeed + abs(self.speed)) + Agent.ShiftUpTS
 
     @staticmethod
     def RestartGen():
-        Agent.startTime = time.time()
-        allCP = []
-        bestAgents = []
-        randomizeAll = False
-        cpThreshold = 3
 
-        for i in range(len(Agent.allAgents)):
-            allCP.append(Agent.allAgents[i].totalCP)
-        for agent in range(Agent.numBestAgents):
-            maxCP = max(allCP)
-            bestAgents.append(allCP.index(maxCP))
-            if maxCP> Agent.allMaxCP:
-                Agent.nnBest = allCP.index(maxCP)
-            allCP.insert(allCP.index(maxCP), 0)
-            allCP.remove(maxCP)
-            if maxCP <= cpThreshold:
-                randomizeAll = True
-        for i in range(len(Agent.allAgents)):
-            if not randomizeAll:
-                for j in range(len(bestAgents)):
-                    if i == bestAgents[j]:
-                        Agent.allAgents[i].ResetAgent()
-                        break
-                else:
-                    Agent.allAgents[i].nn = Agent.allAgents[bestAgents[0]].nn
-                    Agent.allAgents[i].nn.mutate(Agent.mutationChance, Agent.mutateFactor)
-                    Agent.allAgents[i].ResetAgent()
+        fitnessMin = 1
+        Agent.startTime = time.time()
+        # a list of all agents fitness
+        allFitness = [agent.fitness for agent in Agent.allAgents]
+
+        # create a new list for the index of best fitness
+        bestFitness = []
+        for agents in range(Agent.numBestAgents):
+            # some weird asss way to get index of nTh biggest number
+            nThBestAgentIndex = sorted(range(len(allFitness)), key=lambda i: allFitness[i])[-(agents + 1)]
+            bestFitness.append(nThBestAgentIndex)
+
+        if max(allFitness) >= Agent.bestFitness:
+            Agent.nnBest = Agent.allAgents[bestFitness[0]].nn
+            Agent.bestFitness = max(allFitness)
+
+            # loop through all agents to update nn
+        for i, agent in enumerate(Agent.allAgents):
+            print(agent.nn.weights)
+            if max(allFitness) > fitnessMin:
+
+                agent.nn = Agent.nnBest
+                agent.nn.mutate(Agent.mutationChance, Agent.mutateFactor)
+                agent.ResetAgent()
             else:
-                Agent.allAgents[i].nn.randomize()
-                Agent.allAgents[i].ResetAgent()
+
+                agent.nn = nn(layers)
+                agent.nn.randomize()
+                agent.ResetAgent()
+                print(max(allFitness))
+
+
     @staticmethod
     def ManageGen():
-
 
         if time.time() - Agent.startTime > Agent.genLength:
             Agent.RestartGen()
@@ -374,8 +416,14 @@ class Agent:
 
     @staticmethod
     def UpdateAgents():
+
         Agent.ManageGen()
         deadAgents = 0
+        if pygame.key.get_pressed()[pygame.K_c]:
+            la_ = Agent.nnBest.layers
+            we_ = Agent.nnBest.weights
+            ba_ = Agent.nnBest.biases
+            print([la_, we_, ba_])
         for i in range(len(Agent.allAgents)):
             if Agent.allAgents[i].runAgent:
                 Agent.allAgents[i].ApplyVelocity()
@@ -394,16 +442,45 @@ class Agent:
                 deadAgents += 1
         if deadAgents >= len(Agent.allAgents):
             Agent.RestartGen()
-        allCP = []
-        for i in range(len(Agent.allAgents)):
-            allCP.append(Agent.allAgents[i].totalCP)
-        Agent.allAgents[allCP.index(max(allCP))].HitBox(True)
-        Agent.allAgents[allCP.index(max(allCP))].DrawVision(Agent.allAgents[allCP.index(max(allCP))].vision[1])
+
+        allFitness = [agent.fitness for agent in Agent.allAgents]
+        if max(allFitness) >= Agent.bestFitness:
+            Agent.nnBest = Agent.allAgents[max(allFitness)].nn
+            Agent.bestFitness = max(allFitness)
+        Agent.allAgents[allFitness.index(max(allFitness))].HitBox(True)
+        Agent.allAgents[allFitness.index(max(allFitness))].DrawVision(
+            Agent.allAgents[allFitness.index(max(allFitness))].vision[1])
+
+    def TrainedMode(self):
+        self.ApplyVelocity()
+        self.ApplyDirection()
+        self.RunAgent()
+        self.DrawVision(self.vision[1])
+        self.TrackCheckpoints()
+        self.TrackCollisions()
+        self.BorderCollisions()
+
+        self.DriftTrail(10 * self.size, 4 * self.size)
+        self.DrawAngle(50, False)
+        self.DrawCar()
 
 
-numAgents = 10
-for i in range(numAgents):
-    Agent()
+def copyNN(network):
+    copiedNetwork = nn(network[0])
+    copiedNetwork.weights = network[1]
+    copiedNetwork.biases = network[2]
+    return copiedNetwork
+
+
+numAgents = 25
+ag = 0
+
+if trainMode:
+    for i in range(numAgents):
+        Agent()
+else:
+    ag = Agent()
+    ag.nn = copyNN(savedNN)  # put a good nn
 
 
 class Car:
@@ -597,8 +674,8 @@ class Car:
         else:
             self.dir += sign(angleError) * (Car.driftLength * .25)
         b = 4 * Car.maxTurnSpeed / Car.maxSpeed ** 2
-        self.turnSpeed = -b * (Car.baseTSValue + abs(self.speed)) * (
-                Car.baseTSValue - Car.maxSpeed + abs(self.speed)) + Car.ShiftUpTS
+        # self.turnSpeed = -b * (Car.baseTSValue + abs(self.speed)) * (
+        #         Car.baseTSValue - Car.maxSpeed + abs(self.speed)) + Car.ShiftUpTS
 
     def UpdateCar(self, keys):
 
@@ -610,9 +687,9 @@ class Car:
 
         # self.DrawVision(self.vision[1])
         self.DriftTrail(10 * self.size, 4 * self.size)
-        self.DrawAngle(50, False)
+        self.DrawAngle(50, True)
         self.DrawCar()
-        self.HitBox(False)
+        # self.HitBox(True)
 
 
 car1 = Car()
@@ -625,8 +702,11 @@ while running:
     screen.fill("grey")
     keys = pygame.key.get_pressed()
     DrawTrack(track, False)
-    # car1.UpdateCar(keys)
-    Agent.UpdateAgents()
+    car1.UpdateCar(keys)
+    if trainMode:
+        Agent.UpdateAgents()
+    else:
+        ag.TrainedMode()
 
     pygame.display.flip()
     dt = clock.tick(60) / 1000
