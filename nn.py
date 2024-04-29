@@ -1,6 +1,6 @@
 import random
 import math
-
+import copy
 
 class NeuralNetwork:
     def __init__(self, layers):
@@ -31,22 +31,28 @@ class NeuralNetwork:
 
     def mutate(self, rate, change):
         # Mutate weights and biases based on a given mutation rate
-        parameters = [self.weights, self.biases]
+        we = copy.deepcopy(self.weights)
+        ba = copy.deepcopy(self.biases)
+        parameters = [we, ba]
         for parameter in range(len(parameters)):
             for layer in range(len(parameters[parameter])):
                 for value in range(len(parameters[parameter][layer])):
-                    if random.random() < rate:
+                    percent = random.random()
+
+                    if percent < rate:
                         # Randomly change the value if the mutation rate allows
                         changeValue = random.uniform(-change, change)
+
                         parameters[parameter][layer][value] += changeValue
                         if abs(parameters[parameter][layer][value]) > 1:
                             parameters[parameter][layer][value] = (parameters[parameter][layer][value]/abs(parameters[parameter][layer][value]))
 
-    def copy(self):
-        copiedNetwork = NeuralNetwork(self.layers)
-        copiedNetwork.weights = self.weights
-        copiedNetwork.biases = self.biases
-        return copiedNetwork
+        return parameters
+
+
+    def values(self, val):
+        self.weights = val[0]
+        self.biases = val[1]
 
     # Activation functions are provided as static methods for simplicity
     @staticmethod
