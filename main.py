@@ -1,6 +1,7 @@
 import math
 import random
 import time
+import save
 
 from nn import NeuralNetwork as nn
 import pygame
@@ -13,66 +14,26 @@ running = True
 waitTime = .5
 ct = 0
 dt = clock.tick(60) / 1000
+
 trainMode = False
 randomStart = True
 
-carImage = pygame.image.load('car.png').convert()
-savedNN = [[8, 4, 3, 5], [
-    [0.1770274244925391, 0.04113310274579973, 0.44097545224483714, -0.4459827094629376, 0.7721571417301989, -1.0,
-     0.7369841399936912, -1.0, 0.5032923710364658, 0.009286683683420005, 0.7351775301861736, -0.6450603279631161,
-     -0.17104180537815467, 0.4962852310365572, -0.21407992057429318, -0.4005692994626197, -0.6616928497627195,
-     -0.37595249983734635, -1.0, 0.6874600654953775, -0.9348009582862379, -0.27118980928592207, 1.0, 0.4498051837263501,
-     0.010268685802201138, 0.7190068174448234, -0.3039121240893375, 0.8733255411098331, -0.19046161794925975,
-     -0.056939084932128015, -0.17329136765132014, -0.43916631075431906],
-    [0.5094196449801702, 0.02992811337338691, -0.25949844254358717, -0.7065141913345698, -0.5927007717793507,
-     -0.2580820493944287, -0.34608037598829433, 0.1854095580204159, 0.385209481002239, 0.6992748461084206,
-     0.7387093801308006, -0.6054773703288485],
-    [0.19003692381439974, -0.8266698144419822, 0.2972847151381608, -0.49968839815007265, 0.9796480035479527,
-     0.15300035659825897, 0.10436106842290854, 1.0, -1.0, -0.30131758259168273, -0.9299834356139876,
-     -0.3845260653284183, -1.0, -0.05541405746609224, 0.16078190969427783]],
-           [[0.20064516398285998, -0.6045637292219196, 0.5340765135304271, -0.3908762000052075],
-            [-0.5754033334753901, -0.3747035056891201, 0.9044013651756369],
-            [1.0, -0.6923014535967948, 0.6965681638511813, -0.4154152298437719, -0.4666639192993354]]]
+numAgents = 25
 
-track = [[(98, 146), (112, 140), (170, 131), (240, 114), (308, 100), (362, 87), (420, 88), (481, 122), (513, 163),
-          (571, 190), (650, 209), (701, 215), (753, 218), (814, 201), (899, 170), (979, 134), (1123, 121), (1166, 116),
-          (1211, 140), (1246, 176), (1260, 239), (1261, 357), (1254, 447), (1262, 564), (1281, 655), (1271, 687),
-          (1233, 745), (1173, 780), (1131, 786), (1061, 785), (994, 779), (916, 759), (842, 715), (788, 682),
-          (736, 659), (674, 639), (593, 647), (522, 682), (473, 701), (417, 718), (347, 740), (259, 745), (160, 717),
-          (80, 601), (72, 582), (50, 510), (51, 447), (51, 383), (50, 326), (50, 256), (72, 155), (98, 146)],
-         [(247, 648), (294, 656), (361, 656), (437, 635), (491, 605), (527, 583), (613, 550), (673, 543), (777, 556),
-          (847, 597), (906, 639), (1015, 688), (1136, 675), (1171, 630), (1176, 565), (1159, 506), (1158, 443),
-          (1152, 328), (1151, 251), (1105, 200), (1044, 190), (974, 225), (899, 267), (878, 273), (833, 292),
-          (783, 313), (716, 331), (661, 337), (610, 311), (547, 286), (484, 267), (459, 249), (446, 218), (416, 195),
-          (381, 179), (309, 158), (276, 168), (232, 192), (185, 206), (160, 241), (160, 287), (148, 328), (130, 372),
-          (117, 427), (128, 495), (154, 539), (181, 571), (225, 616), (247, 648)], (729, 611),
-         [[(761, 546), (743, 712)], [(776, 542), (771, 702)], [(822, 548), (813, 725)], [(897, 607), (836, 766)],
-          [(938, 635), (877, 762)], [(1000, 657), (898, 776)], [(1023, 672), (949, 785)], [(1037, 672), (1007, 799)],
-          [(1079, 659), (1049, 799)], [(1102, 669), (1102, 794)], [(1131, 648), (1120, 792)],
-          [(1155, 663), (1184, 786)], [(1135, 627), (1260, 743)], [(1144, 616), (1290, 666)],
-          [(1152, 584), (1278, 619)], [(1163, 570), (1274, 565)], [(1161, 550), (1263, 540)],
-          [(1180, 526), (1290, 492)], [(1158, 485), (1295, 460)], [(1130, 420), (1294, 414)],
-          [(1120, 367), (1261, 379)], [(1133, 305), (1277, 288)], [(1142, 271), (1274, 245)],
-          [(1125, 245), (1267, 128)], [(1115, 230), (1212, 132)], [(1102, 222), (1168, 114)],
-          [(1078, 213), (1110, 109)], [(1075, 216), (1060, 115)], [(1037, 241), (1030, 113)], [(1012, 240), (988, 131)],
-          [(975, 245), (934, 163)], [(962, 265), (858, 151)], [(908, 328), (803, 154)], [(817, 327), (763, 184)],
-          [(777, 358), (733, 170)], [(708, 372), (698, 202)], [(661, 353), (681, 176)], [(613, 357), (669, 177)],
-          [(548, 329), (632, 160)], [(493, 302), (625, 119)], [(452, 255), (604, 128)], [(436, 235), (577, 139)],
-          [(405, 223), (528, 140)], [(419, 216), (500, 117)], [(402, 209), (466, 101)], [(380, 207), (463, 94)],
-          [(357, 195), (424, 97)], [(347, 201), (357, 64)], [(323, 184), (326, 84)], [(305, 189), (284, 101)],
-          [(283, 202), (258, 112)], [(258, 222), (206, 88)], [(226, 199), (181, 101)], [(208, 255), (145, 108)],
-          [(208, 242), (90, 118)], [(182, 228), (60, 170)], [(181, 261), (41, 205)], [(188, 280), (42, 243)],
-          [(149, 302), (24, 269)], [(153, 339), (46, 322)], [(169, 388), (36, 374)], [(133, 406), (48, 410)],
-          [(135, 439), (31, 456)], [(176, 463), (44, 494)], [(143, 489), (49, 555)], [(149, 521), (20, 591)],
-          [(192, 520), (88, 632)], [(220, 553), (115, 692)], [(235, 593), (165, 721)], [(308, 598), (231, 761)],
-          [(345, 654), (345, 753)], [(367, 609), (449, 778)], [(480, 579), (507, 741)], [(534, 552), (565, 704)],
-          [(583, 492), (620, 717)], [(647, 519), (599, 735)], [(690, 534), (689, 672)]]]
+carImage = pygame.image.load('car.png').convert()
 
 
 def sign(x):
     if x != 0:
         return abs(x) / x
     return 0
+
+
+def copyNN(network):
+    copiedNetwork = nn(network[0])
+    copiedNetwork.weights = network[1]
+    copiedNetwork.biases = network[2]
+    return copiedNetwork
 
 
 def line_intersection(a, b, c, d):
@@ -159,6 +120,8 @@ class Agent:
     startAngle = 10
 
     def __init__(self):
+        self.id = -1
+        self.idColor = "white"
         self.image = pygame.image.load('babyman.png').convert_alpha()
         self.size = 3
         self.image = pygame.transform.scale(self.image, (self.size * 15, self.size * 15))
@@ -189,7 +152,7 @@ class Agent:
             self.NN.randomize()
 
         else:
-            self.NN = copyNN(savedNN)
+            self.NN = copyNN(save.savedNNs[0])
             self.NN.values(self.NN.mutate(Agent.mutationChance, Agent.mutateFactor))
 
         Agent.allAgents.append(self)
@@ -421,12 +384,17 @@ class Agent:
 
     @staticmethod
     def DrawInputs(inputs):
-        inputColor = ["green" if input else "red" for input in inputs]
-        pygame.draw.circle(screen, inputColor[0], pygame.Vector2(25, 10), 5)
-        pygame.draw.circle(screen, inputColor[1], pygame.Vector2(10, 25), 5)
-        pygame.draw.circle(screen, inputColor[2], pygame.Vector2(25, 25), 5)
-        pygame.draw.circle(screen, inputColor[3], pygame.Vector2(40, 25), 5)
-        pygame.draw.rect(screen, inputColor[4], (5, 35, 40, 10))
+        if trainMode:
+            inputColor = ["green" if input else "red" for input in inputs]
+
+            pygame.draw.circle(screen, inputColor[0], pygame.Vector2(25, 10), 5)  # w
+            pygame.draw.circle(screen, inputColor[3], pygame.Vector2(10, 25), 5)  # a
+            pygame.draw.circle(screen, inputColor[1], pygame.Vector2(25, 25), 5)  # s
+            pygame.draw.circle(screen, inputColor[2], pygame.Vector2(40, 25), 5)  # d
+            pygame.draw.rect(screen, inputColor[4], (5, 35, 40, 10))  # spacebar
+
+    def DrawIdColor(self):
+        pygame.draw.circle(screen, self.idColor, pygame.Vector2(self.pos.x, self.pos.y - 40), 6)
 
     @staticmethod
     def ManageGen():
@@ -465,7 +433,7 @@ class Agent:
                 agent.ApplyVelocity()
                 agent.ApplyDirection()
                 agent.RunAgent()
-
+                agent.DrawIdColor()
                 agent.CheckIfBad()
 
                 agent.TrackCheckpoints(True)
@@ -490,13 +458,14 @@ class Agent:
         Agent.allAgents[allFitness.index(max(allFitness))].HitBox(True)
         Agent.allAgents[allFitness.index(max(allFitness))].DrawVision(
             Agent.allAgents[allFitness.index(max(allFitness))].vision[1])
-        Agent.allAgents[allFitness.index(max(allFitness))].DrawInputs(Agent.allAgents[allFitness.index(max(allFitness))].outputs)
+        Agent.allAgents[allFitness.index(max(allFitness))].DrawInputs(
+            Agent.allAgents[allFitness.index(max(allFitness))].outputs)
 
     def TrainedMode(self):
         self.ApplyVelocity()
         self.ApplyDirection()
         self.RunAgent()
-
+        self.DrawIdColor()
         self.DrawInputs(self.outputs)
         # self.DrawVision(self.vision[1])
         self.TrackCheckpoints(False)
@@ -506,24 +475,6 @@ class Agent:
         self.DriftTrail(10 * self.size, 5 * self.size)
         self.DrawAngle(50, False)
         self.DrawCar()
-
-
-def copyNN(network):
-    copiedNetwork = nn(network[0])
-    copiedNetwork.weights = network[1]
-    copiedNetwork.biases = network[2]
-    return copiedNetwork
-
-
-numAgents = 25
-ag = 0
-
-if trainMode:
-    for i in range(numAgents):
-        Agent()
-else:
-    ag = Agent()
-    ag.NN = copyNN(savedNN)  # put a good nn
 
 
 class Car:
@@ -707,6 +658,18 @@ class Car:
         # self.turnSpeed = -b * (Car.baseTSValue + abs(self.speed)) * (
         #         Car.baseTSValue - Car.maxSpeed + abs(self.speed)) + Car.ShiftUpTS
 
+    @staticmethod
+    def DrawInputs(keys):
+        if not trainMode:
+            inputs = [keys[pygame.K_w], keys[pygame.K_a], keys[pygame.K_s], keys[pygame.K_d], keys[pygame.K_SPACE]]
+            inputColor = ["green" if input else "red" for input in inputs]
+
+            pygame.draw.circle(screen, inputColor[0], pygame.Vector2(25, 10), 5)  # w
+            pygame.draw.circle(screen, inputColor[1], pygame.Vector2(10, 25), 5)  # a
+            pygame.draw.circle(screen, inputColor[2], pygame.Vector2(25, 25), 5)  # s
+            pygame.draw.circle(screen, inputColor[3], pygame.Vector2(40, 25), 5)  # d
+            pygame.draw.rect(screen, inputColor[4], (5, 35, 40, 10))  # spacebar
+
     def UpdateCar(self, keys):
 
         self.ApplyVelocity()
@@ -719,36 +682,68 @@ class Car:
         self.DriftTrail(10 * self.size, 4 * self.size)
         self.DrawAngle(50, True)
         self.DrawCar()
+        self.DrawInputs(keys)
         # self.HitBox(True)
 
 
-car1 = Car()
+track = save.tracks[0]
+
+
+def CreateAgents(trainMode):
+    if trainMode:
+        for i in range(numAgents):
+            Agent()
+    else:
+        for i, nn in enumerate(save.savedNNs):
+            ag = Agent()
+            ag.NN = copyNN(nn)
+            ag.id = i
+            ag.idColor = save.NNcolors[i][0]
+            print(f"Agent {ag.id+1} is color {save.NNcolors[i][1]}.")
+
+
+CreateAgents(trainMode)
+
 wait = False
+
+
+def restart():
+    car1.ResetPos()
+    for ag in Agent.allAgents:
+        ag.ResetAgent()
+
+
+def ManageRun(trainMode):
+    global wait
+    keys = pygame.key.get_pressed()
+    if not trainMode:
+        for ag in Agent.allAgents:
+            ag.TrainedMode()
+        if wait:
+
+            time.sleep(waitTime)
+            wait = False
+        if not wait and pygame.key.get_pressed()[pygame.K_r]:
+            restart()
+            wait = True
+    else:
+        Agent.UpdateAgents()
+
+    DrawTrack(track, False)
+    car1.UpdateCar(keys)
+
+
+car1 = Car()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    if wait:
-        time.sleep(waitTime)
-        wait = False
-        car1.ResetPos()
-        ag.ResetAgent()
-    if pygame.mouse.get_pressed()[0]:
-        ag.ResetAgent()
-        ag.pos = pygame.Vector2(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
-        print(pygame.mouse.get_pos())
     dt = clock.tick(60) / 1000
     ct += dt
     screen.fill([120, 120, 110])
-    keys = pygame.key.get_pressed()
-    DrawTrack(track, False)
-    car1.UpdateCar(keys)
-    if not trainMode:
-        if not wait and pygame.key.get_pressed()[pygame.K_r]:
-            wait = True
-        ag.TrainedMode()
-    else:
-        Agent.UpdateAgents()
+
+    ManageRun(trainMode)
 
     pygame.display.flip()
 
